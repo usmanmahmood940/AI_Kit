@@ -36,6 +36,7 @@ class ImageLabelingActivity : AppCompatActivity() {
                 showDialog()
             }
             btnGetLabels.setOnClickListener {
+                tvLabels.text = ""
                 imageUri?.let {
                     val bitmap = contentResolver.openInputStream(it)?.use { inputStream ->
                         BitmapFactory.decodeStream(inputStream)
