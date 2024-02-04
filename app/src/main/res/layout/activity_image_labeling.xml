@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ImageLabelingActivity">
+
+    <TextView
+        android:id="@+id/tv_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:text="Image Labeling"
+        android:textColor="@color/blue"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivInputImage"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="40dp"
+        android:adjustViewBounds="true"
+        android:background="@color/white"
+        android:elevation="3dp"
+        android:padding="2dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_label"
+        app:layout_constraintWidth_percent="0.5"
+        app:shapeAppearanceOverlay="@style/curvedCorner"
+        app:strokeColor="@color/black"
+        app:strokeWidth="1dp" />
+
+    <TextView
+        android:id="@+id/tv_upload_image"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:elevation="3dp"
+        android:lineSpacingMultiplier="1.1"
+        android:text="Upload Image"
+        android:textAlignment="center"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toBottomOf="@+id/ivInputImage"
+        app:layout_constraintEnd_toEndOf="@+id/ivInputImage"
+        app:layout_constraintStart_toStartOf="@+id/ivInputImage"
+        app:layout_constraintTop_toTopOf="@+id/ivInputImage" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_get_labels"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="50dp"
+        android:backgroundTint="@color/blue"
+        android:paddingVertical="15dp"
+        android:text="Get Labels"
+        android:textColor="@color/white"
+        app:cornerRadius="10dp"
+        app:layout_constraintEnd_toEndOf="@+id/ivInputImage"
+        app:layout_constraintStart_toStartOf="@+id/ivInputImage"
+        app:layout_constraintTop_toBottomOf="@+id/ivInputImage" />
+
+    <ScrollView
+        android:id="@+id/scrollView2"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_get_labels"
+        tools:layout_editor_absoluteX="20dp">
+
+        <TextView
+            android:id="@+id/tv_labels"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:textColor="@color/black"
+            android:textIsSelectable="true"
+            android:textSize="18sp"
+            tools:layout_editor_absoluteX="20dp" />
+
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

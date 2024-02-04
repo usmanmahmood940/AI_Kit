@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "369486833065",
+    "project_id": "ai-kit-df6f3",
+    "storage_bucket": "ai-kit-df6f3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:369486833065:android:6e7a7ace4c5ecb6cfd10b8",
+        "android_client_info": {
+          "package_name": "com.example.ai_kit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDG_7Nll75eLQEt-EUOQAto_m7YI1L4SeM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
