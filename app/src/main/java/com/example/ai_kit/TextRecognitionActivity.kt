@@ -52,48 +52,47 @@ class TextRecognitionActivity : AppCompatActivity() {
             }
             btnTextRecognize.setOnClickListener {
                 imageUri?.let {
-
-                    val bitmap = contentResolver.openInputStream(it)?.use { inputStream ->
-                        BitmapFactory.decodeStream(inputStream)
-                    }
-                    bitmap?.let {
-                        val image = InputImage.fromBitmap(bitmap, 0)
-
-                        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-                        val result = recognizer.process(image)
-                            .addOnSuccessListener { visionText ->
-                                // Task completed successfully
-                                val resultText = visionText.text
-                                for (block in visionText.textBlocks) {
-                                    val language =  block.recognizedLanguage
-//                                    tvRecognizedLanguage.text = "${tvRecognizedLanguage.text.toString()} , $language"
-                                    val blockText = block.text
-                                    val blockCornerPoints = block.cornerPoints
-                                    val blockFrame = block.boundingBox
-                                    for (line in block.lines) {
-                                        val lineText = line.text
-                                        val lineCornerPoints = line.cornerPoints
-                                        val lineFrame = line.boundingBox
-                                        for (element in line.elements) {
-                                            val elementText = element.text
-                                            val elementCornerPoints = element.cornerPoints
-                                            val elementFrame = element.boundingBox
-                                        }
-                                    }
-                                }
-                                tvRecognizedTextLabel.visibility = View.VISIBLE
-                                tvRecognizedText.text = resultText
-                            }
-                            .addOnFailureListener { e ->
-                                // Task failed with an exception
-                                // ...
-                            }
-                    }
+                    recognizeText(it)
                 }
             }
         }
 
     }
+
+
+    private fun recognizeText(uri: Uri) {
+        uri.toBitmap(this)?.let {
+            val image = InputImage.fromBitmap(it, 0)
+
+            val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+            val result = recognizer.process(image)
+                .addOnSuccessListener { visionText ->
+                    // Task completed successfully
+                    binding.tvRecognizedText.text  = visionText.text
+                    for (block in visionText.textBlocks) {
+                        val language =  block.recognizedLanguage
+                        val blockText = block.text
+                        val blockCornerPoints = block.cornerPoints
+                        val blockFrame = block.boundingBox
+                        for (line in block.lines) {
+                            val lineText = line.text
+                            val lineCornerPoints = line.cornerPoints
+                            val lineFrame = line.boundingBox
+                            for (element in line.elements) {
+                                val elementText = element.text
+                                val elementCornerPoints = element.cornerPoints
+                                val elementFrame = element.boundingBox
+                            }
+                        }
+                    }
+                }
+                .addOnFailureListener { e ->
+                    // Task failed with an exception
+                    // ...
+                }
+        }
+    }
+
 
 
     private fun showDialog() {

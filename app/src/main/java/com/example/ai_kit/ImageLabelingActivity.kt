@@ -38,29 +38,32 @@ class ImageLabelingActivity : AppCompatActivity() {
             btnGetLabels.setOnClickListener {
                 tvLabels.text = ""
                 imageUri?.let {
-                    val bitmap = contentResolver.openInputStream(it)?.use { inputStream ->
-                        BitmapFactory.decodeStream(inputStream)
-                    }
-                    bitmap?.let {
-                        val image = InputImage.fromBitmap(bitmap, 0)
-                        val options = ImageLabelerOptions.Builder()
-                                     .setConfidenceThreshold(0.4f)
-                                     .build()
-                        val labeler = ImageLabeling.getClient(options)
-                        labeler.process(image)
-                            .addOnSuccessListener { labels ->
-                                for (label in labels) {
-                                    val text = label.text
-                                    val confidence = label.confidence
-                                    tvLabels.text = "${tvLabels.text.toString()} \nLabel: $text, Confidence: $confidence"
-                                }
-                            }
-                            .addOnFailureListener { e ->
-
-                            }
-                    }
+                    labelImage(it)
                 }
             }
+        }
+    }
+
+    private fun labelImage(uri: Uri){
+        uri.toBitmap(this)?.let{
+            val image = InputImage.fromBitmap(it, 0)
+            val options = ImageLabelerOptions.Builder()
+                .setConfidenceThreshold(0.4f)
+                .build()
+            val labeler = ImageLabeling.getClient(options)
+            labeler.process(image)
+                .addOnSuccessListener { labels ->
+                    for (label in labels) {
+                        val text = label.text
+                        val confidence = label.confidence
+                        binding.tvLabels.let{
+                            it.text = "${it.text.toString()} \nLabel: $text, Confidence: $confidence"
+                        }
+                    }
+                }
+                .addOnFailureListener { e ->
+
+                }
         }
     }
 

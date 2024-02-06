@@ -15,7 +15,6 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Spinner
-import android.widget.Toast
 import com.example.ai_kit.databinding.ActivityTranslateBinding
 import com.google.mlkit.common.model.DownloadConditions
 import com.google.mlkit.nl.translate.TranslateLanguage
@@ -28,6 +27,7 @@ class TranslateActivity : AppCompatActivity() , TextToSpeech.OnInitListener {
     private  var sourceLanguage: String? = null
     private  var targetLanguage: String? = null
     private lateinit var textToSpeech: TextToSpeech
+    private lateinit var  recognitionIntent: Intent
 
 
 
@@ -44,8 +44,24 @@ class TranslateActivity : AppCompatActivity() , TextToSpeech.OnInitListener {
     }
 
     private fun init(){
-        recordAudio()
+        setupSpeechRecognizer()
         setupAudio()
+        binding.apply {
+            setupLanguageOptions()
+            btnSpeak.setOnClickListener {
+                requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1)
+                startListening()
+            }
+
+            btnTranslate.setOnClickListener {
+                translate(etInputText.text.toString())
+            }
+
+            etInputText.addTextChangedListener(inputTextChangeListener)
+        }
+    }
+
+    private fun setupLanguageOptions() {
         binding.apply {
             val languageList = getLanguageList()
             val adapter = LanguageAdapter(this@TranslateActivity, languageList)
@@ -53,51 +69,6 @@ class TranslateActivity : AppCompatActivity() , TextToSpeech.OnInitListener {
             sourceSpinnerListener(sourceLanguageSpinner, adapter)
             targetLanguageSpinner.adapter = adapter
             targetSpinnerListener(targetLanguageSpinner, adapter)
-
-
-            btnTranslate.setOnClickListener {
-               if(etInputText.text.toString().isNotEmpty() && sourceLanguage != null && targetLanguage != null) {
-                    val options = TranslatorOptions.Builder()
-                        .setSourceLanguage(sourceLanguage?:TranslateLanguage.ENGLISH)
-                        .setTargetLanguage(targetLanguage?:TranslateLanguage.ENGLISH)
-                        .build()
-                    val englishGermanTranslator = Translation.getClient(options)
-                    var conditions = DownloadConditions.Builder()
-                        .requireWifi()
-                        .build()
-                    englishGermanTranslator.downloadModelIfNeeded(conditions)
-                        .addOnSuccessListener {
-                            englishGermanTranslator.translate(etInputText.text.toString())
-                                .addOnSuccessListener { translatedText ->
-                                    tvTranslatedText.text = translatedText
-                                }
-                                .addOnFailureListener { exception ->
-                                }
-                        }
-                        .addOnFailureListener { exception ->
-                        }
-                }
-            }
-            etInputText.addTextChangedListener(object : TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                    // This method is called to notify you that characters within s are about to be replaced with new text with a length of after
-                }
-
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    // This method is called to notify you that somewhere within s, the text has been changed
-                }
-
-                override fun afterTextChanged(s: Editable?) {
-                    // This method is called to notify you that the characters within s have been changed
-                    if(s.toString().isNotEmpty()) {
-                        translate(s.toString())
-                    }
-                    else{
-                        tvTranslatedText.text = ""
-                    }
-                    // Do something with the entered text
-                }
-            })
         }
     }
 
@@ -105,87 +76,41 @@ class TranslateActivity : AppCompatActivity() , TextToSpeech.OnInitListener {
         textToSpeech = TextToSpeech(this, this)
         binding.tvTranslatedText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                // Do something before the text changes
             }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                // Do something during the text changing
             }
 
             override fun afterTextChanged(s: Editable?) {
-                // Do something after the text changes
                 speakText(s.toString())
             }
         })
     }
 
-    private fun recordAudio() {
-        requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1)
-        val recognitionIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+    private fun setupSpeechRecognizer() {
+        speechRecognizer.setRecognitionListener(speechRecognitionListener)
+        recognitionIntent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+        val supportedLanguages = arrayOf(sourceLanguage)
+        recognitionIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, supportedLanguages.joinToString(","))
+        recognitionIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
 
-
-        binding.btnSpeak.setOnClickListener {
-            val supportedLanguages = arrayOf(sourceLanguage) // English, Urdu, Spanish, etc.
-
-            recognitionIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, supportedLanguages.joinToString(","))
-            recognitionIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            try {
-                binding.btnSpeak.setText("Listening...")
-                binding.btnSpeak.isEnabled = false
-                speechRecognizer.startListening(recognitionIntent)
-            } catch (e: ActivityNotFoundException) {
-                // Handle the exception if speech recognition is not supported on the device
-                e.printStackTrace()
-                binding.btnSpeak.setText("Speak")
-                binding.btnSpeak.isEnabled = true
-            }
-        }
-
-
-        // Set up recognition listener
-        speechRecognizer.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {}
-
-            override fun onBeginningOfSpeech() {}
-
-            override fun onRmsChanged(rmsdB: Float) {}
-
-            override fun onBufferReceived(buffer: ByteArray?) {}
-
-            override fun onEndOfSpeech() {}
-
-            override fun onError(error: Int) {
-                binding.btnSpeak.setText("Speak")
-                binding.btnSpeak.isEnabled = true
-            }
-
-            override fun onResults(results: Bundle?) {
-                // Get the recognized speech and update your UI
-                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                matches?.get(0)?.let {
-//                    Toast.makeText(this@TranslateActivity, it, Toast.LENGTH_SHORT).show()
-                    binding.etInputText.setText(it)
-
-//                    englishToUrdu(it)
-                }
-                binding.btnSpeak.setText("Speak")
-                binding.btnSpeak.isEnabled = true
-            }
-
-            override fun onPartialResults(partialResults: Bundle?) {
-//                val matches = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-//                matches?.get(0)?.let {
-//                    binding.etInputText.setText(it)
-//
-//                }
-//                binding.btnSpeak.setText("Speak")
-//                binding.btnSpeak.isEnabled = true
-            }
-
-            override fun onEvent(eventType: Int, params: Bundle?) {}
-        })
     }
 
+    fun startListening() {
+        try {
+            binding.btnSpeak.apply {
+                setText("Listening...")
+                isEnabled = false
+            }
+            speechRecognizer.startListening(recognitionIntent)
+        } catch (e: ActivityNotFoundException) {
+            e.printStackTrace()
+            binding.btnSpeak.apply {
+                setText("Speak")
+                isEnabled = true
+            }
+        }
+    }
     fun translate(inputText:String){
         if(inputText.isNotEmpty() && sourceLanguage != null && targetLanguage != null) {
             val options = TranslatorOptions.Builder()
@@ -254,30 +179,6 @@ class TranslateActivity : AppCompatActivity() , TextToSpeech.OnInitListener {
         }
     }
 
-    fun englishToUrdu(inputText: String) {
-        val options = TranslatorOptions.Builder()
-            .setSourceLanguage(TranslateLanguage.ENGLISH)
-            .setTargetLanguage(TranslateLanguage.URDU)
-            .build()
-        val englishUrduTranslator = Translation.getClient(options)
-        var conditions = DownloadConditions.Builder()
-            .requireWifi()
-            .build()
-        englishUrduTranslator.downloadModelIfNeeded(conditions)
-            .addOnSuccessListener {
-                englishUrduTranslator.translate(inputText)
-                    .addOnSuccessListener { translatedText ->
-                        binding.etInputText.setText(translatedText)
-                    }
-                    .addOnFailureListener { exception ->
-                        // Model couldn’t be downloaded or other internal error.
-                    }
-                    .addOnFailureListener { exception ->
-                        // Model couldn’t be downloaded or other internal error.
-                    }
-            }
-    }
-
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
@@ -296,5 +197,60 @@ class TranslateActivity : AppCompatActivity() , TextToSpeech.OnInitListener {
 
     private fun speakText(text: String) {
         textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+    }
+
+    val speechRecognitionListener = object : RecognitionListener {
+        override fun onReadyForSpeech(params: Bundle?) {}
+
+        override fun onBeginningOfSpeech() {}
+
+        override fun onRmsChanged(rmsdB: Float) {}
+
+        override fun onBufferReceived(buffer: ByteArray?) {}
+
+        override fun onEndOfSpeech() {}
+
+        override fun onError(error: Int) {
+            binding.btnSpeak.apply {
+                setText("Speak")
+                isEnabled = true
+            }
+        }
+
+        override fun onResults(results: Bundle?) {
+            val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            matches?.get(0)?.let {
+                binding.etInputText.setText(it)
+            }
+            binding.btnSpeak.apply {
+                setText("Speak")
+                isEnabled = true
+            }
+        }
+
+        override fun onPartialResults(partialResults: Bundle?) {}
+
+        override fun onEvent(eventType: Int, params: Bundle?) {}
+    }
+
+    val inputTextChangeListener = object : TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+            // This method is called to notify you that characters within s are about to be replaced with new text with a length of after
+        }
+
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            // This method is called to notify you that somewhere within s, the text has been changed
+        }
+
+        override fun afterTextChanged(s: Editable?) {
+            // This method is called to notify you that the characters within s have been changed
+            if(s.toString().isNotEmpty()) {
+                translate(s.toString())
+            }
+            else{
+                binding.tvTranslatedText.text = ""
+            }
+            // Do something with the entered text
+        }
     }
 }

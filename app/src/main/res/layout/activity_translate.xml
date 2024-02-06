@@ -87,19 +87,31 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvTargetLanguage" />
 
+    <TextView
+        android:id="@+id/tvMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Model downloading.."
+        android:textColor="@color/black"
+        android:layout_marginTop="10dp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="@+id/etInputText"
+        app:layout_constraintStart_toStartOf="@+id/etInputText"
+        app:layout_constraintTop_toBottomOf="@+id/etInputText"/>
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_translate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
         android:backgroundTint="@color/blue"
         android:paddingVertical="15dp"
         android:text="Translate Text"
         android:textColor="@color/white"
         app:cornerRadius="10dp"
+        android:layout_marginTop="40dp"
         app:layout_constraintEnd_toEndOf="@+id/etInputText"
         app:layout_constraintStart_toStartOf="@+id/etInputText"
-        app:layout_constraintTop_toBottomOf="@+id/etInputText" />
+        app:layout_constraintTop_toBottomOf="@+id/tvMessage" />
 
     <ScrollView
         android:layout_width="match_parent"

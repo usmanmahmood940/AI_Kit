@@ -34,3 +34,13 @@ fun Bitmap.toUri(context: Context): Uri? {
 }
 
 
+fun Uri.toBitmap(context: Context): Bitmap? {
+    return try {
+        context.contentResolver.openInputStream(this)?.use { inputStream ->
+            BitmapFactory.decodeStream(inputStream)
+        }
+    } catch (e: IOException) {
+        e.printStackTrace()
+        null
+    }
+}
