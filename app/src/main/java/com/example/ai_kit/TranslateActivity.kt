@@ -44,12 +44,12 @@ class TranslateActivity : AppCompatActivity() , TextToSpeech.OnInitListener {
     }
 
     private fun init(){
-        setupSpeechRecognizer()
+        setupLanguageOptions()
         setupAudio()
         binding.apply {
-            setupLanguageOptions()
             btnSpeak.setOnClickListener {
                 requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1)
+                setupSpeechRecognizer()
                 startListening()
             }
 

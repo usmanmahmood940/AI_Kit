@@ -22,16 +22,24 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import com.example.ai_kit.databinding.ActivityTextRecognitionBinding
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.Executors
 
 
 class TextRecognitionActivity : AppCompatActivity() {
     private lateinit var binding: ActivityTextRecognitionBinding
     var imageUri: Uri? = null
+    var cameraImage: Bitmap? = null
+    private var currentPhotoPath: String? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,7 +50,7 @@ class TextRecognitionActivity : AppCompatActivity() {
 
     }
 
-    private fun init(){
+    private fun init() {
         binding.apply {
             tvUploadImage.setOnClickListener {
                 showDialog()
@@ -52,7 +60,13 @@ class TextRecognitionActivity : AppCompatActivity() {
             }
             btnTextRecognize.setOnClickListener {
                 imageUri?.let {
-                    recognizeText(it)
+                    it.toBitmap(this@TextRecognitionActivity)?.let {
+                        recognizeText(it)
+                    }
+                }?: run {
+                    cameraImage?.let {
+                        recognizeText(it)
+                    }
                 }
             }
         }
@@ -60,39 +74,38 @@ class TextRecognitionActivity : AppCompatActivity() {
     }
 
 
-    private fun recognizeText(uri: Uri) {
-        uri.toBitmap(this)?.let {
-            val image = InputImage.fromBitmap(it, 0)
+    private fun recognizeText(bitmap: Bitmap) {
+        val image = InputImage.fromBitmap(bitmap, 0)
 
-            val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-            val result = recognizer.process(image)
-                .addOnSuccessListener { visionText ->
-                    // Task completed successfully
-                    binding.tvRecognizedText.text  = visionText.text
-                    for (block in visionText.textBlocks) {
-                        val language =  block.recognizedLanguage
-                        val blockText = block.text
-                        val blockCornerPoints = block.cornerPoints
-                        val blockFrame = block.boundingBox
-                        for (line in block.lines) {
-                            val lineText = line.text
-                            val lineCornerPoints = line.cornerPoints
-                            val lineFrame = line.boundingBox
-                            for (element in line.elements) {
-                                val elementText = element.text
-                                val elementCornerPoints = element.cornerPoints
-                                val elementFrame = element.boundingBox
-                            }
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        val result = recognizer.process(image)
+            .addOnSuccessListener { visionText ->
+                // Task completed successfully
+                binding.tvRecognizedText.text = visionText.text
+
+                for (block in visionText.textBlocks) {
+                    val language = block.recognizedLanguage
+                    val blockText = block.text
+                    val blockCornerPoints = block.cornerPoints
+                    val blockFrame = block.boundingBox
+                    for (line in block.lines) {
+                        val lineText = line.text
+                        val lineCornerPoints = line.cornerPoints
+                        val lineFrame = line.boundingBox
+                        for (element in line.elements) {
+                            val elementText = element.text
+                            val elementCornerPoints = element.cornerPoints
+                            val elementFrame = element.boundingBox
                         }
                     }
                 }
-                .addOnFailureListener { e ->
-                    // Task failed with an exception
-                    // ...
-                }
-        }
-    }
+            }
+            .addOnFailureListener { e ->
+                // Task failed with an exception
+                // ...
+            }
 
+    }
 
 
     private fun showDialog() {
@@ -120,9 +133,6 @@ class TextRecognitionActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun lauchCamera() {
-        takePhotoLauncher.launch(null)
-    }
 
     private fun pickImageFromGallery() {
         pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -139,17 +149,57 @@ class TextRecognitionActivity : AppCompatActivity() {
             }
         }
 
-    private val takePhotoLauncher: ActivityResultLauncher<Void?> =
-        registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-            if (bitmap != null) {
-                binding.tvUploadImage.visibility = View.GONE
-                binding.ivInputImage.setImageBitmap(bitmap.getImprovedBitmap())
-                imageUri = bitmap.toUri(this)
+    private val takePhotoLauncher: ActivityResultLauncher<Uri?> =
+        registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+            if (success) {
+                currentPhotoPath?.let {
+                    getBitmapFromPath(it)?.let { bitmap ->
+                        binding.tvUploadImage.visibility = View.GONE
+                        binding.ivInputImage.setImageBitmap(bitmap)
+                        cameraImage = bitmap
+                    }
+
+                }
+                // Image capture successful
+                // Process the captured image or save its URI for later use
+            } else {
+                // Image capture failed or was cancelled
+                // Handle the failure or cancellation scenario
             }
         }
 
+    fun lauchCamera() {
+        // Create a file in internal storage for storing the captured image
+        val photoFile: File? = createImageFile()
 
+        // Continue only if the photo file was successfully created
+        photoFile?.let { file ->
+            val photoUri: Uri = FileProvider.getUriForFile(
+                this,
+                "com.example.ai_kit.fileprovider",
+                file
+            )
 
+            // Launch the camera to capture the image
+            takePhotoLauncher.launch(photoUri)
+        }
+    }
+    private fun createImageFile(): File? {
+        // Get the directory for storing the image in internal storage
+        val storageDir: File? = filesDir
+
+        // Create an image file name
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val imageFileName = "TextRecognize_${timeStamp}_"
+        return File.createTempFile(
+            imageFileName, /* prefix */
+            ".jpg", /* suffix */
+            storageDir /* directory */
+        ).apply {
+            // Save a file path for use with ACTION_VIEW intents
+            currentPhotoPath = absolutePath
+        }
+    }
 
 
 }

@@ -44,3 +44,12 @@ fun Uri.toBitmap(context: Context): Bitmap? {
         null
     }
 }
+
+fun getBitmapFromPath(filePath: String): Bitmap? {
+    return try {
+        BitmapFactory.decodeFile(filePath)
+    } catch (e: Exception) {
+        // Handle any errors that may occur during decoding
+        null
+    }
+}
